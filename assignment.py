@@ -1,8 +1,7 @@
+import csv
 from adapter import StreamAdapter
 import json
 from typing import Dict, Hashable, Iterable
-import pandas as pd
-import numpy as np
 
 
 class CourseWareB(StreamAdapter):
@@ -14,10 +13,7 @@ class CourseWareB(StreamAdapter):
 
     @staticmethod
     def __extract_panel_status(panel_status: Dict[str, str]) -> tuple:
-        panel_state = [0, 0, 0, 0]
-        m = panel_status.values()
-        for i in m:
-            panel_state = i
+        panel_state = list(panel_status.values())[0]
         return tuple(panel_state)
 
     @classmethod
@@ -48,20 +44,45 @@ if __name__ == "__main__":
     """
     在这里处理日志输出，输出结果为result.csv，三个字段为：学生ID，状态，是否为正确状态
     """
-    dt = pd.read_csv("data.csv", error_bad_lines=False, sep="\t")
-    raw_state = dt["state"]
+    # 使用标准的Python类库导入csv数据
+    filename = 'data.csv'
+    eFile = open(filename)
+    # 读取csv文件
+    eReader = csv.reader(eFile, delimiter="\t")
+    dt = list(eReader)
 
     result = []
-    for x in raw_state:
-        result.append(CourseWareB.load_raw_state(x))
+    for x in range(1, len(dt)-1):
+        result.append(CourseWareB.load_raw_state(dt[x][3]))
+
+    print(result)
 
     is_right = []
     for y in result:
         is_right.append(CourseWareB.is_user_right(y))
 
-    is_right = pd.DataFrame(is_right)
-    dt['is_right'] = is_right
+    print(is_right)
 
-    dt = dt.drop(columns=["cr_code", "trace_id", "ctime_ts"])
-    # print(dt)
-    dt.to_csv('result.csv')
+    m = [0, 3]
+    final = []
+    for x in range(0, len(dt)-1):
+        dt1 = []
+        for y in m:
+            dt1.append(dt[x][y])
+        final.append(dt1)
+    print(final)
+
+    final[0].append("is_right")
+    print(final)
+    for x in range(1, len(dt)-1):
+        final[x].append(is_right[x-1])
+
+    print(final)
+
+    with open("result.csv", "a", newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(final[0])
+        row = final[1:len(final)]
+        for r in row:
+            writer.writerow(r)
+
